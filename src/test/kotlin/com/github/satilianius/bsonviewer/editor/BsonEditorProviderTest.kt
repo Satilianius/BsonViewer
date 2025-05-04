@@ -1,0 +1,66 @@
+package com.github.satilianius.bsonviewer.editor
+
+import com.intellij.openapi.application.WriteAction
+import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import org.junit.Test
+
+class BsonEditorProviderTest : BasePlatformTestCase() {
+
+    @Test
+    fun testAccept() {
+        val provider = BsonEditorProvider()
+
+        // Create a BSON file
+        val bsonFile = WriteAction.computeAndWait<com.intellij.openapi.vfs.VirtualFile, Throwable> {
+            myFixture.addFileToProject("test.bson", "{}").virtualFile
+        }
+
+        // Create a non-BSON file
+        val textFile = WriteAction.computeAndWait<com.intellij.openapi.vfs.VirtualFile, Throwable> {
+            myFixture.addFileToProject("test.txt", "text").virtualFile
+        }
+
+        // Test that provider accepts BSON files
+        assertTrue("Provider should accept BSON files", provider.accept(project, bsonFile))
+
+        // Test that provider rejects non-BSON files
+        assertFalse("Provider should reject non-BSON files", provider.accept(project, textFile))
+    }
+
+    @Test
+    fun testCreateEditor() {
+        val provider = BsonEditorProvider()
+
+        // Create a BSON file
+        val bsonFile = WriteAction.computeAndWait<com.intellij.openapi.vfs.VirtualFile, Throwable> {
+            myFixture.addFileToProject("test.bson", "{}").virtualFile
+        }
+
+        // Create editor
+        val editor = provider.createEditor(project, bsonFile)
+
+        try {
+            // Verify editor type
+            assertTrue("Editor should be a BsonEditor", editor is BsonEditor)
+
+            // Verify editor properties
+            assertEquals("BSON Editor", editor.name)
+            assertEquals(bsonFile, editor.file)
+        } finally {
+            // Clean up
+            editor.dispose()
+        }
+    }
+
+    @Test
+    fun testEditorTypeId() {
+        val provider = BsonEditorProvider()
+        assertEquals("BsonEditor", provider.editorTypeId)
+    }
+
+    @Test
+    fun testPolicy() {
+        val provider = BsonEditorProvider()
+        assertNotNull("Policy should not be null", provider.policy)
+    }
+}

@@ -6,10 +6,12 @@
 
     <depends>com.intellij.modules.platform</depends>
 
-    <resource-bundle>messages.MyBundle</resource-bundle>
-
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.satilianius.bsonviewer.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
-        <postStartupActivity implementation="com.github.satilianius.bsonviewer.startup.MyProjectActivity" />
+        <!-- BSON file type and editor support -->
+        <fileType name="BSON"
+                  implementationClass="com.github.satilianius.bsonviewer.filetype.BsonFileType"
+                  fieldName="INSTANCE"
+                  extensions="bson"/>
+        <fileEditorProvider implementation="com.github.satilianius.bsonviewer.editor.BsonEditorProvider"/>
     </extensions>
 </idea-plugin>
