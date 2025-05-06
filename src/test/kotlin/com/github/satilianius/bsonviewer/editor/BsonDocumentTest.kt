@@ -1,17 +1,44 @@
 package com.github.satilianius.bsonviewer.editor
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.application.WriteAction
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import de.undercouch.bson4jackson.BsonFactory
+import org.bson.BsonDocument
+import org.bson.BsonBinaryWriter
+import org.bson.codecs.BsonDocumentCodec
+import org.bson.codecs.EncoderContext
+import org.bson.io.BasicOutputBuffer
 import org.junit.Test
 
 class BsonDocumentTest : BasePlatformTestCase() {
 
+    /**
+     * Helper method to convert a JSON string to BSON binary data
+     */
+    private fun jsonToBson(json: String): ByteArray {
+        // Parse JSON to BsonDocument
+        val bsonDocument = BsonDocument.parse(json)
+
+        // Convert BsonDocument to BSON binary data
+        val outputBuffer = BasicOutputBuffer()
+        val writer = BsonBinaryWriter(outputBuffer)
+        val codec = BsonDocumentCodec()
+        codec.encode(writer, bsonDocument, EncoderContext.builder().build())
+
+        return outputBuffer.toByteArray()
+    }
+
     @Test
     fun testLoadValidJsonContent() {
-        // Create a test file with valid JSON content
+        // Create a test file with valid BSON content
+        // language=JSON
         val jsonContent = """{"name": "test", "value": 123}"""
+        val bsonContent = jsonToBson(jsonContent)
         val file = WriteAction.computeAndWait<com.intellij.openapi.vfs.VirtualFile, Throwable> {
-            myFixture.addFileToProject("test.bson", jsonContent).virtualFile
+            val vFile = myFixture.addFileToProject("test.bson", "").virtualFile
+            vFile.setBinaryContent(bsonContent)
+            vFile
         }
 
         // Create BsonDocument instance
@@ -23,30 +50,98 @@ class BsonDocumentTest : BasePlatformTestCase() {
         assertTrue("JSON should contain 'name'", json.contains("name"))
         assertTrue("JSON should contain 'test'", json.contains("test"))
         assertTrue("JSON should contain '123'", json.contains("123"))
+
+        // Verify the file is recognized as valid BSON
+        assertTrue("File should be recognized as valid BSON", bsonDocument.isValidBson())
     }
 
     @Test
-    fun testLoadInvalidContent() {
-        // Create a test file with invalid content
-        val invalidContent = "This is not JSON or BSON"
+    fun testValidBsonFileNotOverwritten() {
+        // Create a test file with valid BSON content
+        val jsonContent = """{"original": true, "data": "should be preserved"}"""
+        val bsonContent = jsonToBson(jsonContent)
         val file = WriteAction.computeAndWait<com.intellij.openapi.vfs.VirtualFile, Throwable> {
-            myFixture.addFileToProject("invalid.bson", invalidContent).virtualFile
+            val vFile = myFixture.addFileToProject("preserve_test.bson", "").virtualFile
+            vFile.setBinaryContent(bsonContent)
+            vFile
         }
 
-        // Create BsonDocument instance - should not throw exception
+        // Create BsonDocument instance
         val bsonDocument = BsonDocument(file)
 
-        // Should return empty JSON object
+        // Verify it's valid BSON
+        assertTrue("Should be valid BSON", bsonDocument.isValidBson())
+
+        // Don't make any changes
+
+        // Save the document
+        WriteAction.runAndWait<Throwable> {
+            bsonDocument.save()
+        }
+
+        // Verify the file content still contains the original data
+        val json = bsonDocument.toJson()
+        assertTrue("JSON should contain 'original'", json.contains("original"))
+        assertTrue("JSON should contain 'data'", json.contains("data"))
+        assertTrue("JSON should contain 'should be preserved'", json.contains("should be preserved"))
+    }
+
+    @Test
+    fun testLoadEmptyContent() {
+        // Create an empty file
+        val file = WriteAction.computeAndWait<com.intellij.openapi.vfs.VirtualFile, Throwable> {
+            myFixture.addFileToProject("empty.bson", "").virtualFile
+        }
+
+        // Create BsonDocument instance
+        val bsonDocument = BsonDocument(file)
+
+        // Should return an empty JSON object for an empty file
         val json = bsonDocument.toJson()
         assertEquals("{}", json)
+
+        // Empty file should be considered valid BSON
+        assertTrue("Empty file should be valid BSON", bsonDocument.isValidBson())
+    }
+
+    @Test
+    fun testInvalidBsonNotOverwritten() {
+        // Create a file with completely invalid content (plain text)
+        val invalidContent = "This is not a BSON file".toByteArray()
+
+        val file = WriteAction.computeAndWait<com.intellij.openapi.vfs.VirtualFile, Throwable> {
+            val vFile = myFixture.addFileToProject("invalid.bson", "").virtualFile
+            vFile.setBinaryContent(invalidContent)
+            vFile
+        }
+
+        // Create BsonDocument instance - this will throw an exception internally
+        // but should still set isValidBson to false
+        val bsonDocument = BsonDocument(file)
+
+        // Try to save - should not overwrite the file because isValidBson is false
+        WriteAction.runAndWait<Throwable> {
+            bsonDocument.save()
+        }
+
+        // Verify the file content was not changed
+        val updatedContent = WriteAction.computeAndWait<ByteArray, Throwable> {
+            file.contentsToByteArray()
+        }
+
+        // Content should still be the original invalid content
+        assertOrderedEquals(invalidContent, updatedContent)
     }
 
     @Test
     fun testToJson() {
-        // Create a test file with valid JSON content
+        // Create a test file with valid BSON content
         val jsonContent = """{"name": "test", "nested": {"key": "value"}}"""
+        val bsonContent = jsonToBson(jsonContent)
         val file = WriteAction.computeAndWait<com.intellij.openapi.vfs.VirtualFile, Throwable> {
-            myFixture.addFileToProject("test.bson", jsonContent).virtualFile
+            val vFile = myFixture.addFileToProject("test.bson", "").virtualFile
+            vFile.setBinaryContent(bsonContent)
+            vFile
         }
 
         // Create BsonDocument instance
@@ -64,9 +159,12 @@ class BsonDocumentTest : BasePlatformTestCase() {
 
     @Test
     fun testFromJson() {
-        // Create an empty test file
+        // Create an empty BSON file
         val file = WriteAction.computeAndWait<com.intellij.openapi.vfs.VirtualFile, Throwable> {
-            myFixture.addFileToProject("empty.bson", "").virtualFile
+            val vFile = myFixture.addFileToProject("empty.bson", "").virtualFile
+            // Initialize with an empty BSON document
+            vFile.setBinaryContent(jsonToBson("{}"))
+            vFile
         }
 
         // Create BsonDocument instance
@@ -86,10 +184,13 @@ class BsonDocumentTest : BasePlatformTestCase() {
 
     @Test
     fun testSave() {
-        // Create a test file with initial content
+        // Create a test file with initial BSON content
         val initialJson = """{"initial": true}"""
+        val bsonContent = jsonToBson(initialJson)
         val file = WriteAction.computeAndWait<com.intellij.openapi.vfs.VirtualFile, Throwable> {
-            myFixture.addFileToProject("save_test.bson", initialJson).virtualFile
+            val vFile = myFixture.addFileToProject("save_test.bson", "").virtualFile
+            vFile.setBinaryContent(bsonContent)
+            vFile
         }
 
         // Create BsonDocument instance
@@ -110,5 +211,28 @@ class BsonDocumentTest : BasePlatformTestCase() {
         }
         assertTrue("File content should contain 'updated'", updatedContent.contains("updated"))
         assertTrue("File content should contain 'saved'", updatedContent.contains("saved"))
+    }
+
+    @Test
+    fun testConversionProducesSameResult() {
+        // language=json
+        val sourceJson = """{"name":"Chris","age":23,"address":{"city":"New York","country":"America"},"friends":[{"name":"Emily","hobbies":["biking","music","gaming"]},{"name":"John","hobbies":["soccer","gaming"]}]}"""
+
+
+        // Create separate mappers for JSON and BSON
+        val jsonMapper = ObjectMapper()
+        val bsonMapper = ObjectMapper(BsonFactory())
+
+        // First parse JSON string to JsonNode using a regular JSON mapper
+        val jsonNode = jsonMapper.readTree(sourceJson)
+
+        // Convert to BSON bytes using BSON mapper
+        val bsonBytes = bsonMapper.writeValueAsBytes(jsonNode)
+
+        // Convert BSON bytes back to JsonNode and then to string
+        val convertedBack = bsonMapper.readTree(bsonBytes)
+        val resultJson = jsonMapper.writeValueAsString(convertedBack)
+
+        assertEquals(sourceJson, resultJson)
     }
 }

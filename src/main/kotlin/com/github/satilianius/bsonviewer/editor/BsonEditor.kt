@@ -15,14 +15,14 @@ import com.intellij.openapi.vfs.VirtualFile
 import java.beans.PropertyChangeListener
 import javax.swing.JComponent
 
-class BsonEditor(private val project: Project, private val virtualFile: VirtualFile) : UserDataHolderBase(), FileEditor {
+class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserDataHolderBase(), FileEditor {
     private val bsonDocument = BsonDocument(virtualFile)
     private val jsonContent: String = bsonDocument.toJson()
     private val editorDocument: Document = EditorFactory.getInstance().createDocument(jsonContent)
     private val editor: Editor = EditorFactory.getInstance().createEditor(editorDocument, project, virtualFile, false)
 
     init {
-        // Add document listener to save changes
+        // Add a document listener to save changes
         editorDocument.addDocumentListener(object : DocumentListener {
             override fun documentChanged(event: DocumentEvent) {
                 val json = editorDocument.text

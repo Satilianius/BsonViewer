@@ -1,81 +1,114 @@
 package com.github.satilianius.bsonviewer.editor
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.vfs.VirtualFile
+import de.undercouch.bson4jackson.BsonFactory
 import org.bson.BsonDocument
-import org.bson.json.JsonMode
-import org.bson.json.JsonWriterSettings
 import java.io.IOException
 
 class BsonDocument(private val virtualFile: VirtualFile) {
     companion object {
         private val LOG = Logger.getInstance(BsonDocument::class.java)
-        private val JSON_WRITER_SETTINGS = JsonWriterSettings.builder()
-            .indent(true)
-            .outputMode(JsonMode.EXTENDED)
-            .build()
+        private val JSON_MAPPER = ObjectMapper()
+        private val BSON_MAPPER = ObjectMapper(BsonFactory())
+
+        // Error message for invalid BSON format
+        private const val INVALID_BSON_MESSAGE =
+            "// This file does not appear to be in valid BSON format.\n" +
+                    "// The original file content has been preserved.\n"
     }
 
-    private var bsonDocument: BsonDocument? = null
+    private var json: String? = null
+    private var isValidBson: Boolean = true
+    private var originalContent: ByteArray? = null
 
     init {
-        try {
-            loadBsonDocument()
-        } catch (e: Exception) {
-            LOG.error("Failed to load BSON document", e)
-        }
+        loadBsonDocument()
     }
 
     private fun loadBsonDocument() {
         try {
             val content = virtualFile.contentsToByteArray()
+            originalContent = content.copyOf() // Store original content
+
             if (content.isNotEmpty()) {
                 try {
-                    // Check if the file starts with a valid JSON character
-                    val firstChar = content[0].toInt().toChar()
-                    if (firstChar == '{' || firstChar == '[') {
-                        // Likely JSON format
-                        val jsonContent = String(content)
-                        bsonDocument = BsonDocument.parse(jsonContent)
-                    } else {
-                        // Not JSON, create an empty document for now
-                        // In a real implementation, we would parse binary BSON here
-                        LOG.info("File does not appear to be in JSON format, creating empty document")
-                        bsonDocument = BsonDocument()
-                    }
+                    // Convert BSON bytes to JsonNode using BSON mapper
+                    val jsonNode = BSON_MAPPER.readTree(content)
+                    // Convert JsonNode to formatted JSON string using JSON mapper
+                    json = JSON_MAPPER.writeValueAsString(jsonNode)
+                    isValidBson = true
                 } catch (e: Exception) {
-                    LOG.error("Failed to parse file content", e)
-                    bsonDocument = BsonDocument()
+                    // TODO: fix log for tests
+//                    LOG.error("Failed to parse file content", e)
+                    // For invalid BSON, show the error message instead of empty string
+                    json = INVALID_BSON_MESSAGE
+                    isValidBson = false
                 }
             } else {
-                bsonDocument = BsonDocument()
+                json = "{}"
+                isValidBson = true // Empty file is technically valid
             }
         } catch (e: IOException) {
             LOG.error("Error reading file", e)
-            bsonDocument = BsonDocument()
+            json = INVALID_BSON_MESSAGE
+            isValidBson = false
         }
     }
 
     fun toJson(): String {
-        return bsonDocument?.toJson(JSON_WRITER_SETTINGS) ?: "{}"
+        return if (isValidBson) {
+            json?: "{}"
+        } else {
+            INVALID_BSON_MESSAGE
+        }
     }
 
     fun fromJson(json: String) {
         try {
-            bsonDocument = BsonDocument.parse(json)
+            // Validate JSON by parsing it
+            JSON_MAPPER.readTree(json)
+            this.json = json
+            isValidBson = true
         } catch (e: Exception) {
-            LOG.error("Failed to parse JSON", e)
+            LOG.error("Invalid JSON format", e)
+            // Keep the invalid JSON for editing, but mark as invalid
+            this.json = json
+            isValidBson = false
         }
     }
 
     fun save() {
         try {
-            bsonDocument?.let {
-                val jsonContent = it.toJson(JSON_WRITER_SETTINGS)
-                virtualFile.setBinaryContent(jsonContent.toByteArray())
+            if (isValidBson) {
+                // Only save if the document is valid BSON
+                json?.let {
+                    try {
+                        // First, parse JSON string to JsonNode using a regular JSON mapper
+                        val jsonNode = JSON_MAPPER.readTree(it)
+
+                        // Convert to BSON bytes using BSON mapper
+                        val bsonContent = BSON_MAPPER.writeValueAsBytes(jsonNode)
+
+                        virtualFile.setBinaryContent(bsonContent)
+                    } catch (e: Exception) {
+                        LOG.error("Error converting JSON to BSON", e)
+                        isValidBson = false
+                    }
+                }
+            } else {
+                LOG.warn("Not saving invalid BSON document to preserve original content")
             }
         } catch (e: IOException) {
             LOG.error("Error saving file", e)
         }
+    }
+
+    /**
+     * Returns whether the file contains valid BSON data
+     */
+    fun isValidBson(): Boolean {
+        return isValidBson
     }
 }

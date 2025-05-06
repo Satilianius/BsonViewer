@@ -3,6 +3,11 @@ package com.github.satilianius.bsonviewer.editor
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.fileEditor.FileEditorStateLevel
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import org.bson.BsonDocument
+import org.bson.BsonBinaryWriter
+import org.bson.codecs.BsonDocumentCodec
+import org.bson.codecs.EncoderContext
+import org.bson.io.BasicOutputBuffer
 import org.junit.Test
 
 /**
@@ -14,13 +19,32 @@ import org.junit.Test
 class BsonEditorTest : BasePlatformTestCase() {
 
     /**
+     * Helper method to convert a JSON string to BSON binary data
+     */
+    private fun jsonToBson(json: String): ByteArray {
+        // Parse JSON to BsonDocument
+        val bsonDocument = BsonDocument.parse(json)
+
+        // Convert BsonDocument to BSON binary data
+        val outputBuffer = BasicOutputBuffer()
+        val writer = BsonBinaryWriter(outputBuffer)
+        val codec = BsonDocumentCodec()
+        codec.encode(writer, bsonDocument, EncoderContext.builder().build())
+
+        return outputBuffer.toByteArray()
+    }
+
+    /**
      * Test that the editor can be created and has the expected properties.
      */
     @Test
     fun testEditorProperties() {
-        // Create a simple empty file
+        // Create a simple empty BSON file
+        val bsonContent = jsonToBson("{}")
         val file = WriteAction.computeAndWait<com.intellij.openapi.vfs.VirtualFile, Throwable> {
-            myFixture.addFileToProject("test_properties.bson", "{}").virtualFile
+            val vFile = myFixture.addFileToProject("test_properties.bson", "").virtualFile
+            vFile.setBinaryContent(bsonContent)
+            vFile
         }
 
         // Create BsonEditor
@@ -47,9 +71,12 @@ class BsonEditorTest : BasePlatformTestCase() {
      */
     @Test
     fun testEditorState() {
-        // Create a simple empty file
+        // Create a simple empty BSON file
+        val bsonContent = jsonToBson("{}")
         val file = WriteAction.computeAndWait<com.intellij.openapi.vfs.VirtualFile, Throwable> {
-            myFixture.addFileToProject("test_state.bson", "{}").virtualFile
+            val vFile = myFixture.addFileToProject("test_state.bson", "").virtualFile
+            vFile.setBinaryContent(bsonContent)
+            vFile
         }
 
         // Create BsonEditor
