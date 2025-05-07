@@ -26,7 +26,7 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
         editorDocument.addDocumentListener(object : DocumentListener {
             override fun documentChanged(event: DocumentEvent) {
                 val json = editorDocument.text
-                bsonDocument.fromJson(json)
+                bsonDocument.setContent(json)
                 bsonDocument.save()
             }
         })

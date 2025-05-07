@@ -1,5 +1,7 @@
 package com.github.satilianius.bsonviewer.editor
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.vfs.VirtualFile
@@ -11,6 +13,7 @@ class BsonDocument(private val virtualFile: VirtualFile) {
     companion object {
         private val LOG = Logger.getInstance(BsonDocument::class.java)
         private val JSON_MAPPER = ObjectMapper()
+            .enable(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY) // Used for validation
         private val BSON_MAPPER = ObjectMapper(BsonFactory())
 
         // Error message for invalid BSON format
@@ -19,7 +22,7 @@ class BsonDocument(private val virtualFile: VirtualFile) {
                     "// The original file content has been preserved.\n"
     }
 
-    private var json: String? = null
+    private var jsonContent: String? = null
     private var isValidBson: Boolean = true
     private var originalContent: ByteArray? = null
 
@@ -30,77 +33,76 @@ class BsonDocument(private val virtualFile: VirtualFile) {
     private fun loadBsonDocument() {
         try {
             val content = virtualFile.contentsToByteArray()
-            originalContent = content.copyOf() // Store original content
+            originalContent = content.copyOf() // Store original content in case we need to restore it after error
 
-            if (content.isNotEmpty()) {
-                try {
-                    // Convert BSON bytes to JsonNode using BSON mapper
-                    val jsonNode = BSON_MAPPER.readTree(content)
-                    // Convert JsonNode to formatted JSON string using JSON mapper
-                    json = JSON_MAPPER.writeValueAsString(jsonNode)
-                    isValidBson = true
-                } catch (e: Exception) {
-                    // TODO: fix log for tests
-//                    LOG.error("Failed to parse file content", e)
-                    // For invalid BSON, show the error message instead of empty string
-                    json = INVALID_BSON_MESSAGE
-                    isValidBson = false
-                }
-            } else {
-                json = "{}"
+            if (content.isEmpty()) {
+                jsonContent = ""
                 isValidBson = true // Empty file is technically valid
+                return
+            }
+
+            try {
+                val jsonNode = BSON_MAPPER.readTree(content)
+                jsonContent = JSON_MAPPER.writeValueAsString(jsonNode)
+                isValidBson = true
+            } catch (e: Exception) {
+                // TODO: fix log for tests
+                //                    LOG.error("Failed to parse file content", e)
+                jsonContent = INVALID_BSON_MESSAGE
+                isValidBson = false
             }
         } catch (e: IOException) {
             LOG.error("Error reading file", e)
-            json = INVALID_BSON_MESSAGE
+            jsonContent = INVALID_BSON_MESSAGE
             isValidBson = false
         }
     }
 
     fun toJson(): String {
         return if (isValidBson) {
-            json?: "{}"
+            jsonContent?: ""
         } else {
             INVALID_BSON_MESSAGE
         }
     }
 
-    fun fromJson(json: String) {
+    fun setContent(json: String) {
+        this.jsonContent = json
         try {
             // Validate JSON by parsing it
             JSON_MAPPER.readTree(json)
-            this.json = json
             isValidBson = true
         } catch (e: Exception) {
             LOG.error("Invalid JSON format", e)
             // Keep the invalid JSON for editing, but mark as invalid
-            this.json = json
             isValidBson = false
         }
     }
 
     fun save() {
         try {
-            if (isValidBson) {
-                // Only save if the document is valid BSON
-                json?.let {
-                    try {
-                        // First, parse JSON string to JsonNode using a regular JSON mapper
-                        val jsonNode = JSON_MAPPER.readTree(it)
-
-                        // Convert to BSON bytes using BSON mapper
-                        val bsonContent = BSON_MAPPER.writeValueAsBytes(jsonNode)
-
-                        virtualFile.setBinaryContent(bsonContent)
-                    } catch (e: Exception) {
-                        LOG.error("Error converting JSON to BSON", e)
-                        isValidBson = false
-                    }
-                }
-            } else {
-                LOG.warn("Not saving invalid BSON document to preserve original content")
+            // Only valid JSON can be converted to BSON, but since it is an expected state during editing,
+            // just don't do anything and wait until the save call with a valid JSON
+            if (!isValidBson) {
+                LOG.debug("Not saving invalid BSON document to preserve original content")
+                return
             }
-        } catch (e: IOException) {
+
+            jsonContent?.let {
+                try {
+                    // First, parse JSON string to JsonNode using a regular JSON mapper
+                    val jsonNode = JSON_MAPPER.readTree(it)
+
+                    // Convert to BSON bytes using BSON mapper
+                    val bsonContent = BSON_MAPPER.writeValueAsBytes(jsonNode)
+
+                    virtualFile.setBinaryContent(bsonContent)
+                } catch (e: JsonProcessingException) {
+                    LOG.error("Error converting JSON to BSON", e)
+                    isValidBson = false
+                }
+            }
+        } catch (e: Exception) {
             LOG.error("Error saving file", e)
         }
     }
