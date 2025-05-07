@@ -72,8 +72,8 @@ class BsonDocument(private val virtualFile: VirtualFile) {
             // Validate JSON by parsing it
             JSON_MAPPER.readTree(json)
             isValidBson = true
-        } catch (e: Exception) {
-            LOG.error("Invalid JSON format", e)
+        } catch (e: JsonProcessingException) {
+            LOG.debug("Invalid JSON format. Marking virtual file as invalid", e)
             // Keep the invalid JSON for editing, but mark as invalid
             isValidBson = false
         }
