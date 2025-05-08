@@ -1,6 +1,8 @@
 package com.github.satilianius.bsonviewer.editor
 
 import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.core.util.DefaultIndenter
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.diagnostic.Logger
@@ -8,6 +10,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import de.undercouch.bson4jackson.BsonFactory
 import org.bson.BsonDocument
 import java.io.IOException
+
+// https://plugins.jetbrains.com/docs/intellij/modifying-psi.html?from=jetbrains.org#creating-the-new-psi
+private const val IntelliJDefaultLineSeparator = "\n"
 
 class BsonDocument(private val virtualFile: VirtualFile) {
     companion object {
@@ -33,7 +38,7 @@ class BsonDocument(private val virtualFile: VirtualFile) {
     private fun loadBsonDocument() {
         try {
             val content = virtualFile.contentsToByteArray()
-            originalContent = content.copyOf() // Store original content in case we need to restore it after error
+            originalContent = content.copyOf() // Store original content in case we need to restore it after an error
 
             if (content.isEmpty()) {
                 jsonContent = ""
@@ -43,7 +48,11 @@ class BsonDocument(private val virtualFile: VirtualFile) {
 
             try {
                 val jsonNode = BSON_MAPPER.readTree(content)
-                jsonContent = JSON_MAPPER.writeValueAsString(jsonNode)
+
+                jsonContent = JSON_MAPPER.writer(
+                    DefaultPrettyPrinter().withObjectIndenter(
+                        DefaultIndenter().withLinefeed(IntelliJDefaultLineSeparator)))
+                        .writeValueAsString(jsonNode)
                 isValidBson = true
             } catch (e: Exception) {
                 // TODO: fix log for tests
