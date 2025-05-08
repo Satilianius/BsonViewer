@@ -2,5 +2,6 @@
 .idea
 .intellijPlatform
 .qodana
-.kotlin // https://kotlinlang.org/docs/whatsnew20.html#new-directory-for-kotlin-data-in-gradle-projects
+# https://kotlinlang.org/docs/whatsnew20.html#new-directory-for-kotlin-data-in-gradle-projects
+.kotlin
 build
