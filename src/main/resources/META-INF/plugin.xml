@@ -13,5 +13,11 @@
                   fieldName="INSTANCE"
                   extensions="bson"/>
         <fileEditorProvider implementation="com.github.satilianius.bsonviewer.editor.BsonEditorProvider"/>
+
+        <!-- Fix for conflicting registry key definition warning -->
+        <registryKey key="kotlin.mpp.tests.force.gradle"
+                    defaultValue="false"
+                    description="Force using Gradle test runner even for JVM-only modules"
+                    overrides="true"/>
     </extensions>
 </idea-plugin>
