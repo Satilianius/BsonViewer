@@ -1,5 +1,6 @@
 package com.github.satilianius.bsonviewer.filetype
 
+import com.github.satilianius.bsonviewer.icons.BsonIcons
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.openapi.vfs.VirtualFile
 import javax.swing.Icon
@@ -16,7 +17,7 @@ class BsonFileType : FileType {
 
     override fun getDefaultExtension(): String = EXTENSION
 
-    override fun getIcon(): Icon? = null // TODO: Add icon
+    override fun getIcon(): Icon? = BsonIcons.BsonIcon
 
     override fun isBinary(): Boolean = true
 

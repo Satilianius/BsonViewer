@@ -1,0 +1,10 @@
+{
+  "icons": {
+    "expui": {
+      "fileTypes": {
+        "bson.svg": "icons/bson.svg",
+        "bson_dark.svg": "icons/bson_dark.svg"
+      }
+    }
+  }
+}

@@ -13,6 +13,7 @@
                   fieldName="INSTANCE"
                   extensions="bson"/>
         <fileEditorProvider implementation="com.github.satilianius.bsonviewer.editor.BsonEditorProvider"/>
+        <iconMapper mappingFile="BsonViewerIconMappings.json"/>
 
         <!-- Fix for conflicting registry key definition warning -->
         <registryKey key="kotlin.mpp.tests.force.gradle"
