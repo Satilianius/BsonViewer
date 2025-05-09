@@ -22,8 +22,10 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
     // TODO check if it needs to be disposed manually
     private val bsonDocument = BsonDocument(virtualFile)
     private val jsonContent: String = bsonDocument.toJson()
+
     // Create a lightweight virtual file with a JSON file type
     val jsonFile = LightVirtualFile("${file.name}.json", JsonFileType.INSTANCE, jsonContent)
+
     // Creating an editor with the JSON virtual file should return JSON editor
     private val jsonEditor = TextEditorProvider.getInstance().createEditor(project, jsonFile) as TextEditor
 
@@ -31,15 +33,18 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
         Disposer.register(this, jsonEditor)
 
         // Add a document listener to convert JSON back to BSON on save
-        jsonEditor.editor.document.addDocumentListener(object : DocumentListener {
-            override fun documentChanged(event: DocumentEvent) {
-                if (ApplicationManager.getApplication().isDispatchThread) {
-                    val json = jsonEditor.editor.document.text
-                    bsonDocument.setContent(json)
-                    bsonDocument.save()
+        jsonEditor.editor.document.addDocumentListener(
+            object : DocumentListener {
+                override fun documentChanged(event: DocumentEvent) {
+                    if (ApplicationManager.getApplication().isDispatchThread) {
+                        val json = jsonEditor.editor.document.text
+                        bsonDocument.setContent(json)
+                        bsonDocument.save()
+                    }
                 }
-            }
-        }, jsonEditor)
+            },
+            jsonEditor
+        )
     }
 
     override fun getComponent(): JComponent = jsonEditor.component

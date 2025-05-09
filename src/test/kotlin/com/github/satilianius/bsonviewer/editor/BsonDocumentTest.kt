@@ -177,6 +177,21 @@ class BsonDocumentTest : BasePlatformTestCase() {
         assertEquals(sourceJson.trim(), resultJson.trim())
     }
 
+    fun testSavingEmptyStringSavesEmptyBson() {
+        val file = WriteAction.computeAndWait<VirtualFile, Throwable> {
+            myFixture.addFileToProject("empty_string.bson", "").virtualFile
+        }
+        val bsonDocument = BsonDocument(file)
+        bsonDocument.setContent("")
+        WriteAction.runAndWait<Throwable> {
+            bsonDocument.save()
+        }
+        val updatedContent = WriteAction.computeAndWait<ByteArray, Throwable> {
+            file.contentsToByteArray()
+        }
+        assertEquals(0, updatedContent.size)
+    }
+
     private fun jsonToBson(json: String): ByteArray {
         val jsonNode =  ObjectMapper().readTree(json)
         return ObjectMapper(BsonFactory()).writeValueAsBytes(jsonNode)

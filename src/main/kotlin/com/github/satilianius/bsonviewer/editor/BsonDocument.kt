@@ -97,9 +97,13 @@ class BsonDocument(private val virtualFile: VirtualFile) {
                 return
             }
 
-            // TODO this may cause issues if the json content is fully removed. I would expect an empty bson file to be created
             jsonContent?.let {
                 try {
+                    if (it.isEmpty()) {
+                        // Without this BSON mapper sets the content to be one byte (10), which is rendered as "null"
+                        virtualFile.setBinaryContent(ByteArray(0))
+                        return@let
+                    }
                     // First, parse JSON string to JsonNode using a regular JSON mapper
                     val jsonNode = JSON_MAPPER.readTree(it)
 
