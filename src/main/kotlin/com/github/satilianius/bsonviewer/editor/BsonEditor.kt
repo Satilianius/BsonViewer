@@ -1,40 +1,50 @@
 package com.github.satilianius.bsonviewer.editor
 
-import com.intellij.openapi.editor.Document
-import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.EditorFactory
+import com.intellij.json.JsonFileType
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorLocation
 import com.intellij.openapi.fileEditor.FileEditorState
 import com.intellij.openapi.fileEditor.FileEditorStateLevel
+import com.intellij.openapi.fileEditor.TextEditor
+import com.intellij.openapi.fileEditor.impl.text.TextEditorProvider
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.testFramework.LightVirtualFile
 import java.beans.PropertyChangeListener
 import javax.swing.JComponent
 
 class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserDataHolderBase(), FileEditor {
     private val bsonDocument = BsonDocument(virtualFile)
     private val jsonContent: String = bsonDocument.toJson()
-    private val editorDocument: Document = EditorFactory.getInstance().createDocument(jsonContent)
-    private val editor: Editor = EditorFactory.getInstance().createEditor(editorDocument, project, virtualFile, false)
+    // Create a lightweight virtual file with a JSON file type
+    val jsonFile = LightVirtualFile("${file.name}.json", JsonFileType.INSTANCE, jsonContent)
+    // Creating an editor with the JSON virtual file should return JSON editor
+    private val jsonEditor = TextEditorProvider.getInstance().createEditor(project, jsonFile) as TextEditor
+    private var isLoading = false
 
     init {
-        // Add a document listener to save changes
-        editorDocument.addDocumentListener(object : DocumentListener {
+        Disposer.register(this, jsonEditor)
+
+        // Add a document listener to convert JSON back to BSON on save
+        jsonEditor.editor.document.addDocumentListener(object : DocumentListener {
             override fun documentChanged(event: DocumentEvent) {
-                val json = editorDocument.text
-                bsonDocument.setContent(json)
-                bsonDocument.save()
+                if (!isLoading && ApplicationManager.getApplication().isDispatchThread) {
+                    val json = jsonEditor.editor.document.text
+                    bsonDocument.setContent(json)
+                    bsonDocument.save()
+                }
             }
         })
     }
 
-    override fun getComponent(): JComponent = editor.component
+    override fun getComponent(): JComponent = jsonEditor.component
 
-    override fun getPreferredFocusedComponent(): JComponent? = editor.contentComponent
+    override fun getPreferredFocusedComponent(): JComponent? = jsonEditor.preferredFocusedComponent
 
     override fun getName(): String = "BSON Editor"
 
@@ -61,6 +71,6 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
     override fun getFile(): VirtualFile = virtualFile
 
     override fun dispose() {
-        EditorFactory.getInstance().releaseEditor(editor)
+        jsonEditor.dispose()
     }
 }
