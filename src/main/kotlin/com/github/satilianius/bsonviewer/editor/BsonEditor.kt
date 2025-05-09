@@ -19,6 +19,7 @@ import java.beans.PropertyChangeListener
 import javax.swing.JComponent
 
 class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserDataHolderBase(), FileEditor {
+    // TODO check if it needs to be disposed manually
     private val bsonDocument = BsonDocument(virtualFile)
     private val jsonContent: String = bsonDocument.toJson()
     // Create a lightweight virtual file with a JSON file type
@@ -39,7 +40,7 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
                     bsonDocument.save()
                 }
             }
-        })
+        }, jsonEditor)
     }
 
     override fun getComponent(): JComponent = jsonEditor.component
@@ -71,6 +72,6 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
     override fun getFile(): VirtualFile = virtualFile
 
     override fun dispose() {
-        jsonEditor.dispose()
+        // The Disposer should handle disposal of the JSON editor and listener automatically
     }
 }
