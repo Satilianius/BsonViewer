@@ -97,6 +97,7 @@ class BsonDocument(private val virtualFile: VirtualFile) {
                 return
             }
 
+            // TODO this may cause issues if the json content is fully removed. I would expect an empty bson file to be created
             jsonContent?.let {
                 try {
                     // First, parse JSON string to JsonNode using a regular JSON mapper

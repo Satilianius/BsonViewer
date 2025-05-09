@@ -26,7 +26,6 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
     val jsonFile = LightVirtualFile("${file.name}.json", JsonFileType.INSTANCE, jsonContent)
     // Creating an editor with the JSON virtual file should return JSON editor
     private val jsonEditor = TextEditorProvider.getInstance().createEditor(project, jsonFile) as TextEditor
-    private var isLoading = false
 
     init {
         Disposer.register(this, jsonEditor)
@@ -34,7 +33,7 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
         // Add a document listener to convert JSON back to BSON on save
         jsonEditor.editor.document.addDocumentListener(object : DocumentListener {
             override fun documentChanged(event: DocumentEvent) {
-                if (!isLoading && ApplicationManager.getApplication().isDispatchThread) {
+                if (ApplicationManager.getApplication().isDispatchThread) {
                     val json = jsonEditor.editor.document.text
                     bsonDocument.setContent(json)
                     bsonDocument.save()
@@ -73,5 +72,6 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
 
     override fun dispose() {
         // The Disposer should handle disposal of the JSON editor and listener automatically
+        // https://plugins.jetbrains.com/docs/intellij/disposers.html#registering-listeners-with-parent-disposable
     }
 }
