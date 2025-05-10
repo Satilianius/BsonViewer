@@ -1,18 +1,17 @@
 package com.github.satilianius.bsonviewer.editor
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.github.satilianius.bsonviewer.editor.BsonConvertor.Companion.jsonToBson
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import de.undercouch.bson4jackson.BsonFactory
 
 class BsonEditorProviderTest : BasePlatformTestCase() {
 
     fun testAccept() {
         val provider = BsonEditorProvider()
 
-        // language=json
-        val bsonContent = jsonToBson("{\"test\":\"value\"}")
+        // language=JSON
+        val bsonContent = jsonToBson("""{"test":451.0}""")
         val bsonFile = WriteAction.computeAndWait<VirtualFile, Throwable> {
             val vFile = myFixture.addFileToProject("test.bson", "").virtualFile
             vFile.setBinaryContent(bsonContent)
@@ -30,8 +29,8 @@ class BsonEditorProviderTest : BasePlatformTestCase() {
     fun testCreateEditor() {
         val provider = BsonEditorProvider()
 
-        // language=json
-        val bsonContent = jsonToBson("{\"test\":\"value\"}")
+        // language=JSON
+        val bsonContent = jsonToBson("""{"test":42}""")
         val bsonFile = WriteAction.computeAndWait<VirtualFile, Throwable> {
             val vFile = myFixture.addFileToProject("test.bson", "").virtualFile
             vFile.setBinaryContent(bsonContent)
@@ -46,10 +45,5 @@ class BsonEditorProviderTest : BasePlatformTestCase() {
         } finally {
             editor.dispose()
         }
-    }
-
-    private fun jsonToBson(json: String): ByteArray {
-        val jsonNode =  ObjectMapper().readTree(json)
-        return ObjectMapper(BsonFactory()).writeValueAsBytes(jsonNode)
     }
 }

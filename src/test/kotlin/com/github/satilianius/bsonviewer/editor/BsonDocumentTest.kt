@@ -1,10 +1,9 @@
 package com.github.satilianius.bsonviewer.editor
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.github.satilianius.bsonviewer.editor.BsonConvertor.Companion.jsonToBson
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
-import de.undercouch.bson4jackson.BsonFactory
 
 class BsonDocumentTest : BasePlatformTestCase() {
 
@@ -162,19 +161,17 @@ class BsonDocumentTest : BasePlatformTestCase() {
     }
 
     fun testConversionProducesSameResult() {
-        val sourceJson = javaClass.classLoader.getResourceAsStream("sampleOneLine.json")?.bufferedReader()?.readText()
-            ?: throw IllegalStateException("Could not read sampleOneLine.json file")
+        val bsonContent = javaClass.classLoader.getResourceAsStream("exampleGlossary.bson")!!.readAllBytes()
+        val file = WriteAction.computeAndWait<VirtualFile, Throwable> {
+            val vFile = myFixture.addFileToProject("save_test.bson", "").virtualFile
+            vFile.setBinaryContent(bsonContent)
+            vFile
+        }
+        val expectedJson = javaClass.classLoader.getResourceAsStream("exampleGlossary.json")!!.readAllBytes().decodeToString()
 
-        val jsonMapper = ObjectMapper()
-        val bsonMapper = ObjectMapper(BsonFactory())
+        val bsonDocument = BsonDocument(file)
 
-        val jsonNode = jsonMapper.readTree(sourceJson)
-        val bsonBytes = bsonMapper.writeValueAsBytes(jsonNode)
-
-        val convertedBack = bsonMapper.readTree(bsonBytes)
-        val resultJson = jsonMapper.writeValueAsString(convertedBack)
-
-        assertEquals(sourceJson.trim(), resultJson.trim())
+        assertSameLines(expectedJson, bsonDocument.toJson())
     }
 
     fun testSavingEmptyStringSavesEmptyBson() {
@@ -190,10 +187,5 @@ class BsonDocumentTest : BasePlatformTestCase() {
             file.contentsToByteArray()
         }
         assertEquals(0, updatedContent.size)
-    }
-
-    private fun jsonToBson(json: String): ByteArray {
-        val jsonNode =  ObjectMapper().readTree(json)
-        return ObjectMapper(BsonFactory()).writeValueAsBytes(jsonNode)
     }
 }
