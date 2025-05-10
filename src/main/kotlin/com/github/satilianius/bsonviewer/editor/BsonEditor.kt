@@ -2,6 +2,7 @@ package com.github.satilianius.bsonviewer.editor
 
 import com.intellij.json.JsonFileType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileEditor.FileEditor
@@ -31,6 +32,7 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
 
     init {
         Disposer.register(this, jsonEditor)
+        Disposer.register(this, bsonDocument)
 
         // Add a document listener to convert JSON back to BSON on save
         jsonEditor.editor.document.addDocumentListener(
@@ -76,8 +78,8 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
     override fun getFile(): VirtualFile = virtualFile
 
     override fun dispose() {
-        // The Disposer should handle disposal of the JSON editor and listener automatically
+        // The Disposer should handle disposal of the listener automatically
         // https://plugins.jetbrains.com/docs/intellij/disposers.html#registering-listeners-with-parent-disposable
-        Disposer.dispose(this)
+        EditorFactory.getInstance().releaseEditor(jsonEditor.editor)
     }
 }

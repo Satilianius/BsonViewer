@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.util.DefaultIndenter
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.vfs.VirtualFile
 import de.undercouch.bson4jackson.BsonFactory
@@ -14,7 +15,7 @@ import java.io.IOException
 // https://plugins.jetbrains.com/docs/intellij/modifying-psi.html?from=jetbrains.org#creating-the-new-psi
 private const val IntelliJDefaultLineSeparator = "\n"
 
-class BsonDocument(private val virtualFile: VirtualFile) {
+class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
     companion object {
         private val LOG = Logger.getInstance(BsonDocument::class.java)
         private val JSON_MAPPER = ObjectMapper()
@@ -126,5 +127,11 @@ class BsonDocument(private val virtualFile: VirtualFile) {
      */
     fun isValidBson(): Boolean {
         return isValidBson
+    }
+
+    override fun dispose() {
+        // Clear any references to potentially large objects
+        originalContent = null
+        jsonContent = null
     }
 }
