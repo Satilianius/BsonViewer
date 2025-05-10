@@ -78,5 +78,6 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
     override fun dispose() {
         // The Disposer should handle disposal of the JSON editor and listener automatically
         // https://plugins.jetbrains.com/docs/intellij/disposers.html#registering-listeners-with-parent-disposable
+        Disposer.dispose(this)
     }
 }
