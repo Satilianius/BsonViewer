@@ -25,6 +25,11 @@ Features:
 - Saving JSON back to the file
 
 This plugin makes working with MongoDB BSON files as easy as working with regular JSON files.
+
+Limitations:
+- Only valid JSON file can be converted to BSON, so if after editing the file contains invalid JSON, the last valid version will be saved instead
+- BSON format does not preserve formatting, so the default Jackson prettyPrinter is always used to format the file
+
 <!-- Plugin description end -->
 
 ## Installation
