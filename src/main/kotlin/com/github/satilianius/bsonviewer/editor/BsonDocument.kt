@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.vfs.VirtualFile
 import de.undercouch.bson4jackson.BsonFactory
 import org.bson.BsonDocument
@@ -14,10 +14,10 @@ import java.io.IOException
 
 // https://plugins.jetbrains.com/docs/intellij/modifying-psi.html?from=jetbrains.org#creating-the-new-psi
 private const val IntelliJDefaultLineSeparator = "\n"
+private val LOG = logger<BsonDocument>()
 
 class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
     companion object {
-        private val LOG = Logger.getInstance(BsonDocument::class.java)
         private val JSON_MAPPER = ObjectMapper()
             .enable(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY) // Used for validation
         private val BSON_MAPPER = ObjectMapper(BsonFactory())
@@ -54,15 +54,16 @@ class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
                     DefaultPrettyPrinter().withObjectIndenter(
                         DefaultIndenter().withLinefeed(IntelliJDefaultLineSeparator)))
                         .writeValueAsString(jsonNode)
+                LOG.info("Successfully parsed BSON file content of {}".format(virtualFile.path))
                 isValidBson = true
-            } catch (e: Exception) {
-                // TODO: fix log for tests
-                //                    LOG.error("Failed to parse file content", e)
+            } catch (e: JsonProcessingException) {
+                LOG.info("Failed to parse file content", e)
+                // TODO use dialogue message, do not override file content
                 jsonContent = INVALID_BSON_MESSAGE
                 isValidBson = false
             }
         } catch (e: IOException) {
-            LOG.error("Error reading file", e)
+            LOG.warn("Error reading file", e)
             jsonContent = INVALID_BSON_MESSAGE
             isValidBson = false
         }
