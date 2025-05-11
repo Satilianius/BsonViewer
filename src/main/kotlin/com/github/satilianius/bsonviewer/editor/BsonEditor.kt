@@ -20,7 +20,6 @@ import java.beans.PropertyChangeListener
 import javax.swing.JComponent
 
 class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserDataHolderBase(), FileEditor {
-    // TODO check if it needs to be disposed manually
     private val bsonDocument = BsonDocument(virtualFile)
     private val jsonContent: String = bsonDocument.toJson()
 
@@ -80,6 +79,6 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
     override fun dispose() {
         // The Disposer should handle disposal of the listener automatically
         // https://plugins.jetbrains.com/docs/intellij/disposers.html#registering-listeners-with-parent-disposable
-        EditorFactory.getInstance().releaseEditor(jsonEditor.editor)
+         Disposer.dispose(jsonEditor)
     }
 }

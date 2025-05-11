@@ -7,6 +7,7 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
 class BsonEditorTest : BasePlatformTestCase() {
 
+    // TODO this test prints error logs when with the testEditorState(), but not when run individually
     fun testEditorProperties() {
         // language=JSON
         val bsonContent = jsonToBson("{}")
@@ -50,4 +51,16 @@ class BsonEditorTest : BasePlatformTestCase() {
             editor.dispose()
         }
     }
+
+    // TODO write a test for disposing the editor, which checks for double disposal exception on tab closure
+    // 2025-05-11 23:45:52,179 [  88692] SEVERE - #c.i.o.u.ObjectTree - Double release of editor:
+    //com.intellij.openapi.util.TraceableDisposable$DisposalException: Double release of editor:
+    //	at com.intellij.openapi.util.TraceableDisposable.throwDisposalError(TraceableDisposable.java:48)
+    //	at com.intellij.openapi.editor.impl.EditorImpl.throwDisposalError(EditorImpl.java:1074)
+    //	at com.intellij.openapi.editor.impl.EditorImpl.lambda$release$18(EditorImpl.java:1095)
+    //	at com.intellij.openapi.editor.impl.EditorImpl.executeNonCancelableBlock(EditorImpl.java:1086)
+    //	at com.intellij.openapi.editor.impl.EditorImpl.release(EditorImpl.java:1093)
+    //	at com.intellij.openapi.editor.impl.EditorFactoryImpl.releaseEditor(EditorFactoryImpl.kt:237)
+    //	at com.github.satilianius.bsonviewer.editor.BsonEditor.dispose(BsonEditor.kt:83)
+    //	at com.intellij.openapi.util.ObjectTree.runWithTrace(ObjectTree.java:131)
 }
