@@ -6,7 +6,11 @@ import com.intellij.openapi.vfs.VirtualFile
 import javax.swing.Icon
 
 class BsonFileType : FileType {
+    // This is the intended way of using a singleton
+    // https://plugins.jetbrains.com/docs/intellij/language-and-filetype.html
+    @Suppress("CompanionObjectInExtension")
     companion object {
+        @Suppress("unused") // `FileTypeManagerImpl` uses reflection to get this field
         val INSTANCE = BsonFileType()
         const val EXTENSION = "bson"
     }
