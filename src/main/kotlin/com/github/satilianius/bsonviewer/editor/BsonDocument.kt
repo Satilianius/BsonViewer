@@ -21,60 +21,53 @@ class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
         private val JSON_MAPPER = ObjectMapper()
             .enable(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY) // Used for validation
         private val BSON_MAPPER = ObjectMapper(BsonFactory())
-
-        // Error message for invalid BSON format
-        private const val INVALID_BSON_MESSAGE =
-            "// This file does not appear to be in valid BSON format.\n" +
-                    "// The original file content has been preserved.\n"
     }
 
     private var jsonContent: String? = null
     private var isValidBson: Boolean = true
-    private var originalContent: ByteArray? = null
+    private var errorMessage: String? = null
 
     init {
         loadBsonDocument()
     }
 
     private fun loadBsonDocument() {
+        val content = virtualFile.contentsToByteArray()
+
+        if (content.isEmpty()) {
+            jsonContent = ""
+            isValidBson = true // Empty file is technically valid
+            errorMessage = null
+            return
+        }
+
         try {
-            val content = virtualFile.contentsToByteArray()
-            originalContent = content.copyOf() // Store original content in case we need to restore it after an error
+            val jsonNode = BSON_MAPPER.readTree(content)
 
-            if (content.isEmpty()) {
-                jsonContent = ""
-                isValidBson = true // Empty file is technically valid
-                return
-            }
-
-            try {
-                val jsonNode = BSON_MAPPER.readTree(content)
-
-                jsonContent = JSON_MAPPER.writer(
-                    DefaultPrettyPrinter().withObjectIndenter(
-                        DefaultIndenter().withLinefeed(IntelliJDefaultLineSeparator)))
-                        .writeValueAsString(jsonNode)
-                LOG.info("Successfully parsed BSON file content of {}".format(virtualFile.path))
-                isValidBson = true
-            } catch (e: JsonProcessingException) {
-                LOG.info("Failed to parse file content", e)
-                // TODO use dialogue message, do not override file content
-                jsonContent = INVALID_BSON_MESSAGE
-                isValidBson = false
-            }
+            jsonContent = JSON_MAPPER.writer(
+                DefaultPrettyPrinter().withObjectIndenter(
+                    DefaultIndenter().withLinefeed(IntelliJDefaultLineSeparator)))
+                    .writeValueAsString(jsonNode)
+            LOG.info("Successfully parsed BSON file content of {}".format(virtualFile.path))
+            isValidBson = true
+            errorMessage = null
         } catch (e: IOException) {
-            LOG.warn("Error reading file", e)
-            jsonContent = INVALID_BSON_MESSAGE
+            LOG.info("Failed to read BSON file", e)
+            jsonContent = ""
             isValidBson = false
+            errorMessage = "This file does not appear to be in valid BSON format."
         }
     }
 
     fun toJson(): String {
-        return if (isValidBson) {
-            jsonContent?: ""
-        } else {
-            INVALID_BSON_MESSAGE
-        }
+        return jsonContent?: ""
+    }
+
+    /**
+     * Returns the error message if the BSON is invalid, null otherwise
+     */
+    fun getErrorMessage(): String? {
+        return errorMessage
     }
 
     fun setContent(json: String) {
@@ -95,14 +88,15 @@ class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
             // Only valid JSON can be converted to BSON, but since it is an expected state during editing,
             // just don't do anything and wait until the save call with a valid JSON
             if (!isValidBson) {
-                LOG.debug("Not saving invalid BSON document to preserve original content")
+                LOG.debug("Not saving invalid BSON document to preserve previous valid content")
                 return
             }
 
             jsonContent?.let {
                 try {
                     if (it.isEmpty()) {
-                        // Without this BSON mapper sets the content to be one byte (10), which is rendered as "null"
+                        // Without explicitly setting binary content to an empty byte array,
+                        // BSON mapper sets the content to be one byte (10), which is rendered as "null" in the editor
                         virtualFile.setBinaryContent(ByteArray(0))
                         return@let
                     }
@@ -132,7 +126,6 @@ class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
 
     override fun dispose() {
         // Clear any references to potentially large objects
-        originalContent = null
         jsonContent = null
     }
 }

@@ -188,4 +188,25 @@ class BsonDocumentTest : BasePlatformTestCase() {
         }
         assertEquals(0, updatedContent.size)
     }
+
+    fun testInvalidBsonSetsErrorMessage() {
+        val invalidContent = "This is not a BSON file".toByteArray()
+
+        val file = WriteAction.computeAndWait<VirtualFile, Throwable> {
+            val vFile = myFixture.addFileToProject("invalid_with_error.bson", "").virtualFile
+            vFile.setBinaryContent(invalidContent)
+            vFile
+        }
+
+        val bsonDocument = BsonDocument(file)
+
+        // Verify that the document is marked as invalid
+        assertFalse("File should be recognized as invalid BSON", bsonDocument.isValidBson())
+
+        // Verify that the error message is set
+        assertNotNull("Error message should not be null", bsonDocument.getErrorMessage())
+
+        // Verify that toJson returns an empty string for invalid BSON
+        assertEquals("toJson should return empty string for invalid BSON", "", bsonDocument.toJson())
+    }
 }

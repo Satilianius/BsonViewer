@@ -4,6 +4,7 @@ import com.intellij.json.JsonFileType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
+import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorLocation
 import com.intellij.openapi.fileEditor.FileEditorState
@@ -11,6 +12,7 @@ import com.intellij.openapi.fileEditor.FileEditorStateLevel
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.fileEditor.impl.text.TextEditorProvider
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
@@ -32,6 +34,25 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
         Disposer.register(this, jsonEditor)
         Disposer.register(this, bsonDocument)
 
+        // Check if the BSON file content was parsed successfully
+        bsonDocument.getErrorMessage()?.let { errorMessage ->
+            // Disable editing for invalid BSON files to prevent overriding the original content
+            if (jsonEditor.editor is EditorEx) {
+                (jsonEditor.editor as EditorEx).isViewer = true
+            }
+
+            // Show the error dialog only if not in test mode
+            if (!ApplicationManager.getApplication().isUnitTestMode) {
+                ApplicationManager.getApplication().invokeLater {
+                    Messages.showErrorDialog(
+                        project,
+                        errorMessage,
+                        "Error Loading BSON File"
+                    )
+                }
+            }
+        }
+
         // Add a document listener to convert JSON back to BSON on save
         jsonEditor.editor.document.addDocumentListener(
             object : DocumentListener {
@@ -46,6 +67,8 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
             jsonEditor
         )
     }
+
+    fun isViewer(): Boolean = (jsonEditor.editor as? EditorEx)?.isViewer ?: false
 
     override fun getComponent(): JComponent = jsonEditor.component
 
