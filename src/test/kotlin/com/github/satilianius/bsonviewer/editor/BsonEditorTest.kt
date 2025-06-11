@@ -4,10 +4,13 @@ import com.github.satilianius.bsonviewer.editor.BsonConvertor.Companion.jsonToBs
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.fileEditor.FileEditorStateLevel
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.testFramework.runInEdtAndWait
 
 class BsonEditorTest : BasePlatformTestCase() {
-
-    // TODO this test prints error logs when with the testEditorState(), but not when run individually
+    companion object {
+        lateinit var editor: BsonEditor
+    }
+    // TODO the tests print error logs about improper disposing when in a batch, but not when run individually
     fun testEditorProperties() {
         // language=JSON
         val bsonContent = jsonToBson("{}")
@@ -17,18 +20,16 @@ class BsonEditorTest : BasePlatformTestCase() {
             vFile
         }
 
-        val editor = BsonEditor(project, file)
+        editor = BsonEditor(project, file)
 
-        try {
-            assertEquals("Editor name should be 'BSON Editor'", "BSON Editor", editor.name)
-            assertEquals("Editor file should match the input file", file, editor.file)
-            assertFalse("Editor should not be modified initially", editor.isModified)
-            assertTrue("Editor should be valid", editor.isValid)
-            assertNotNull("Editor component should not be null", editor.component)
-            assertNotNull("Editor preferred focused component should not be null", editor.preferredFocusedComponent)
-        } finally {
-            editor.dispose()
-        }
+
+        assertEquals("Editor name should be 'BSON Editor'", "BSON Editor", editor.name)
+        assertEquals("Editor file should match the input file", file, editor.file)
+        assertFalse("Editor should not be modified initially", editor.isModified)
+        assertTrue("Editor should be valid", editor.isValid)
+        assertNotNull("Editor component should not be null", editor.component)
+        assertNotNull("Editor preferred focused component should not be null", editor.preferredFocusedComponent)
+
     }
 
     fun testEditorState() {
@@ -40,16 +41,10 @@ class BsonEditorTest : BasePlatformTestCase() {
             vFile
         }
 
-        val editor = BsonEditor(project, file)
+        editor = BsonEditor(project, file)
 
-        try {
-            val state = editor.getState(FileEditorStateLevel.FULL)
-            assertNotNull("Editor state should not be null", state)
-
-            editor.setState(state)
-        } finally {
-            editor.dispose()
-        }
+        val state = editor.getState(FileEditorStateLevel.FULL)
+        assertNotNull("Editor state should not be null", state)
     }
 
     fun testInvalidBsonEditorIsReadOnly() {
@@ -60,13 +55,18 @@ class BsonEditorTest : BasePlatformTestCase() {
             vFile
         }
 
-        val editor = BsonEditor(project, file)
+        editor = BsonEditor(project, file)
 
-        try {
-            // Verify that the editor is read-only
-            assertTrue("Editor should be read-only for invalid BSON", editor.isViewer())
-        } finally {
+        // Verify that the editor is read-only
+        assertTrue("Editor should be read-only for invalid BSON", editor.isViewer())
+    }
+
+    override fun tearDown() {
+        // Give a chance for any pending async tasks to complete
+        // before calling super.tearDown() which will dispose components
+        runInEdtAndWait {
             editor.dispose()
         }
+        super.tearDown()
     }
 }

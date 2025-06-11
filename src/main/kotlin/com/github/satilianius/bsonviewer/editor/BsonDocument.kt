@@ -12,6 +12,7 @@ import de.undercouch.bson4jackson.BsonFactory
 import org.bson.BsonDocument
 import java.io.IOException
 
+// IntelliJ wants the separators to be "\n" so it can do its own processing with it
 // https://plugins.jetbrains.com/docs/intellij/modifying-psi.html?from=jetbrains.org#creating-the-new-psi
 private const val IntelliJDefaultLineSeparator = "\n"
 private val LOG = logger<BsonDocument>()
