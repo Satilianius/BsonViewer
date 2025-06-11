@@ -56,7 +56,7 @@ class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
             LOG.info("Failed to read BSON file", e)
             jsonContent = ""
             isValidBson = false
-            errorMessage = "File %s does not appear to be in valid BSON format.".format(virtualFile.path)
+            errorMessage = "File does not appear to be a valid BSON:\n%s".format(virtualFile.path)
         }
     }
 
