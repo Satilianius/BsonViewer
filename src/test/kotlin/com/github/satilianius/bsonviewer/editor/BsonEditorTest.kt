@@ -10,7 +10,7 @@ class BsonEditorTest : BasePlatformTestCase() {
     companion object {
         lateinit var editor: BsonEditor
     }
-    // TODO the tests print error logs about improper disposing when in a batch, but not when run individually
+    // TODO the tests print error logs about improper disposing when ran in a batch, but not when ran individually
     fun testEditorProperties() {
         // language=JSON
         val bsonContent = jsonToBson("{}")
