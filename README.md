@@ -4,31 +4,22 @@
 [![Version](https://img.shields.io/jetbrains/plugin/v/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
 [![Downloads](https://img.shields.io/jetbrains/plugin/d/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
 
-## Template ToDo list
-- [x] Create a new [IntelliJ Platform Plugin Template][template] project.
-- [x] Get familiar with the [template documentation][template].
-- [x] Adjust the [pluginGroup](./gradle.properties) and [pluginName](./gradle.properties), as well as the [id](./src/main/resources/META-INF/plugin.xml) and [sources package](./src/main/kotlin).
-- [ ] Adjust the plugin description in `README` (see [Tips][docs:plugin-description])
-- [x] Review the [Legal Agreements](https://plugins.jetbrains.com/docs/marketplace/legal-agreements.html?from=IJPluginTemplate).
-- [ ] [Publish a plugin manually](https://plugins.jetbrains.com/docs/intellij/publishing-plugin.html?from=IJPluginTemplate) for the first time.
-- [ ] Set the `MARKETPLACE_ID` in the above README badges. You can obtain it once the plugin is published to JetBrains Marketplace.
-- [ ] Set the [Plugin Signing](https://plugins.jetbrains.com/docs/intellij/plugin-signing.html?from=IJPluginTemplate) related [secrets](https://github.com/JetBrains/intellij-platform-plugin-template#environment-variables).
-- [ ] Set the [Deployment Token](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html?from=IJPluginTemplate).
-- [ ] Click the <kbd>Watch</kbd> button on the top of the [IntelliJ Platform Plugin Template][template] to be notified about releases containing new features and fixes.
-
 <!-- Plugin description -->
-BsonViewer is an IntelliJ IDEA plugin that allows you to view and edit MongoDB BSON files as JSON files directly in the editor window.
 
-Features:
-- Automatic recognition of .bson files
-- Conversion of BSON to JSON for editing
-- Saving JSON back to the file
+BsonViewer allows you to view and edit MongoDB BSON files as JSON files directly in the editor window.
 
-This plugin makes working with MongoDB BSON files as easy as working with regular JSON files.
+## Features:
+- Open and edit BSON files directly in your IDE
+- Automatic conversion between BSON and JSON formats
+- Validation to ensure data integrity
+- Save modifications back to BSON format
 
-Limitations:
+## Limitations:
 - Only valid JSON file can be converted to BSON, so if after editing the file contains invalid JSON, the last valid version will be saved instead
 - BSON format does not preserve formatting, so the default Jackson prettyPrinter is always used to format the file
+
+## Support
+Found an issue? Have a feature request? Visit [GitHub repository](https://github.com/Satilianius/BsonViewer/issues) or [contact the developer](mailto:satilianius@gmail.com).
 
 <!-- Plugin description end -->
 

@@ -2,7 +2,7 @@
 <idea-plugin>
     <id>com.github.satilianius.bsonviewer</id>
     <name>BsonViewer</name>
-    <vendor>satilianius</vendor>
+    <vendor email="satilianius@gmail.com">Satilianius</vendor>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.json</depends>
