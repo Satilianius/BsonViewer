@@ -1,8 +1,8 @@
 # BsonViewer
 
 ![Build](https://github.com/Satilianius/BsonViewer/workflows/Build/badge.svg)
-[![Version](https://img.shields.io/jetbrains/plugin/v/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
-[![Downloads](https://img.shields.io/jetbrains/plugin/d/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
+[![Version](https://img.shields.io/jetbrains/plugin/v/28119-bsonviewer.svg)](https://plugins.jetbrains.com/plugin/28119-bsonviewer)
+[![Downloads](https://img.shields.io/jetbrains/plugin/d/28119-bsonviewer.svg)](https://plugins.jetbrains.com/plugin/28119-bsonviewer)
 
 <!-- Plugin description -->
 
@@ -17,6 +17,7 @@ BsonViewer allows you to view and edit MongoDB BSON files as JSON files directly
 ## Limitations:
 - Only valid JSON file can be converted to BSON, so if after editing the file contains invalid JSON, the last valid version will be saved instead
 - BSON format does not preserve formatting, so the default Jackson prettyPrinter is always used to format the file
+- Undo and Redo actions are not supported yet
 
 ## Support
 Found an issue? Have a feature request? Visit [GitHub repository](https://github.com/Satilianius/BsonViewer/issues) or [contact the developer](mailto:satilianius@gmail.com).
@@ -32,9 +33,9 @@ Found an issue? Have a feature request? Visit [GitHub repository](https://github
 
 - Using JetBrains Marketplace:
 
-  Go to [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID) and install it by clicking the <kbd>Install to ...</kbd> button in case your IDE is running.
+  Go to [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/28119-bsonviewer) and install it by clicking the <kbd>Install to ...</kbd> button in case your IDE is running.
 
-  You can also download the [latest release](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID/versions) from JetBrains Marketplace and install it manually using
+  You can also download the [latest release](https://plugins.jetbrains.com/plugin/28119-bsonviewer/versions) from JetBrains Marketplace and install it manually using
   <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
 
 - Manually:
