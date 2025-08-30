@@ -2,10 +2,11 @@ package com.github.satilianius.bsonviewer.editor
 
 import com.intellij.json.JsonFileType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.editor.ex.EditorEx
-import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorLocation
 import com.intellij.openapi.fileEditor.FileEditorState
 import com.intellij.openapi.fileEditor.FileEditorStateLevel
@@ -16,21 +17,24 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.pom.Navigatable
 import com.intellij.testFramework.LightVirtualFile
 import java.beans.PropertyChangeListener
 import javax.swing.JComponent
 
-class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserDataHolderBase(), FileEditor {
+class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserDataHolderBase(), TextEditor {
+    private val log = Logger.getInstance(BsonEditor::class.java)
     private val bsonDocument = BsonDocument(virtualFile)
     private val jsonContent: String = bsonDocument.toJson()
 
     // Create a lightweight virtual file with a JSON file type
-    val jsonFile = LightVirtualFile("${file.name}.json", JsonFileType.INSTANCE, jsonContent)
+    val jsonVirtualFile = LightVirtualFile("${virtualFile.name}.json", JsonFileType.INSTANCE, jsonContent)
 
     // Creating an editor with the JSON virtual file should return JSON editor
-    private val jsonEditor = TextEditorProvider.getInstance().createEditor(project, jsonFile) as TextEditor
+    private val jsonEditor = TextEditorProvider.getInstance().createEditor(project, jsonVirtualFile) as TextEditor
 
     init {
+        log.info("Initializing BsonEditor")
         Disposer.register(this, jsonEditor)
         Disposer.register(this, bsonDocument)
 
@@ -53,7 +57,7 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
             }
         }
 
-        // Add a document listener to convert JSON back to BSON on save
+        // Add a document listener to convert JSON back to BSON on document change
         jsonEditor.editor.document.addDocumentListener(
             object : DocumentListener {
                 override fun documentChanged(event: DocumentEvent) {
@@ -82,7 +86,7 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
         // No state to restore
     }
 
-    override fun isModified(): Boolean = false
+    override fun isModified(): Boolean = this.jsonEditor.isModified
 
     override fun isValid(): Boolean = true
 
@@ -102,5 +106,17 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
         // The Disposer should handle disposal of the listener automatically
         // https://plugins.jetbrains.com/docs/intellij/disposers.html#registering-listeners-with-parent-disposable
          Disposer.dispose(jsonEditor)
+    }
+
+    override fun getEditor(): Editor {
+        return jsonEditor.editor
+    }
+
+    override fun canNavigateTo(navigatable: Navigatable): Boolean {
+        return jsonEditor.canNavigateTo(navigatable)
+    }
+
+    override fun navigateTo(navigatable: Navigatable) {
+        jsonEditor.navigateTo(navigatable)
     }
 }
