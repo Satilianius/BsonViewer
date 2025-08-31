@@ -102,12 +102,6 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
 
     override fun getFile(): VirtualFile = virtualFile
 
-    override fun dispose() {
-        // The Disposer should handle disposal of the listener automatically
-        // https://plugins.jetbrains.com/docs/intellij/disposers.html#registering-listeners-with-parent-disposable
-         Disposer.dispose(jsonEditor)
-    }
-
     override fun getEditor(): Editor {
         return jsonEditor.editor
     }
@@ -118,5 +112,11 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
 
     override fun navigateTo(navigatable: Navigatable) {
         jsonEditor.navigateTo(navigatable)
+    }
+
+    override fun dispose() {
+        // The Disposer should handle disposal of the listener automatically
+        // https://plugins.jetbrains.com/docs/intellij/disposers.html#registering-listeners-with-parent-disposable
+        Disposer.dispose(jsonEditor)
     }
 }
