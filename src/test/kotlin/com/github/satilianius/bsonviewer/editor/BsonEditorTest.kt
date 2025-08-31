@@ -12,7 +12,6 @@ import com.intellij.openapi.util.Disposer
 
 class BsonEditorTest : BasePlatformTestCase() {
     private var editor: BsonEditor? = null
-    // TODO the tests print error logs about improper disposing when ran in a batch, but not when ran individually
     fun testEditorProperties() {
         // language=JSON
         val bsonContent = jsonToBson("{}")
@@ -62,11 +61,8 @@ class BsonEditorTest : BasePlatformTestCase() {
 
         val psiFile = PsiManager.getInstance(project).findFile(editor!!.file)!!
         // Simulate user edit: change the JSON content
-        runWriteCommandAction(project, "Edit JSON Text", null, object : Runnable {
-            override fun run() {
-                // language=JSON
-                editor!!.editor.document.setText("""{ "changed": true }""")
-            }
+        runWriteCommandAction(project, "Edit JSON Text", null, { // language=JSON
+            editor!!.editor.document.setText("""{ "changed": true }""")
         }, psiFile)
         assertTrue("Editor content should change after edit", initialText != editor!!.editor.document.text)
 
