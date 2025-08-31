@@ -61,7 +61,8 @@ class BsonEditorTest : BasePlatformTestCase() {
 
         val psiFile = PsiManager.getInstance(project).findFile(editor!!.file)!!
         // Simulate user edit: change the JSON content
-        runWriteCommandAction(project, "Edit JSON Text", null, { // language=JSON
+        runWriteCommandAction(project, "Edit JSON Text", null, {
+            // language=JSON
             editor!!.editor.document.setText("""{ "changed": true }""")
         }, psiFile)
         assertTrue("Editor content should change after edit", initialText != editor!!.editor.document.text)
