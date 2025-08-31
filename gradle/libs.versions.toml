@@ -16,7 +16,6 @@ qodana = "2025.2.1"
 [libraries]
 bson4jackson = { module = "de.undercouch:bson4jackson", version.ref = "bson4Jackson" }
 jackson-blackbird = { module = "com.fasterxml.jackson.module:jackson-module-blackbird", version.ref = "jackson" }
-jackson-kotlin = { group = "com.fasterxml.jackson.module", name = "jackson-module-kotlin", version.ref = "jackson" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 mongodb-bson = { group = "org.mongodb", name = "bson", version.ref = "mongodb-bson" }
 opentest4j = { group = "org.opentest4j", name = "opentest4j", version.ref = "opentest4j" }

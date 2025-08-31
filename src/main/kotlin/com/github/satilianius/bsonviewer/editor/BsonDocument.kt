@@ -15,7 +15,7 @@ import java.io.IOException
 // IntelliJ wants the separators to be "\n" so it can do its own processing with it
 // https://plugins.jetbrains.com/docs/intellij/modifying-psi.html?from=jetbrains.org#creating-the-new-psi
 private const val IntelliJDefaultLineSeparator = "\n"
-private val LOG = logger<BsonDocument>()
+private val log = logger<BsonDocument>()
 
 class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
     companion object {
@@ -49,14 +49,14 @@ class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
                 DefaultPrettyPrinter().withObjectIndenter(
                     DefaultIndenter().withLinefeed(IntelliJDefaultLineSeparator)))
                     .writeValueAsString(jsonNode)
-            LOG.info("Successfully parsed BSON file content of {}".format(virtualFile.path))
+            log.info("Successfully parsed BSON file content of {}".format(virtualFile.name))
             isValidBson = true
             errorMessage = null
         } catch (e: IOException) {
-            LOG.info("Failed to read BSON file", e)
+            log.info("Failed to read BSON file", e)
             jsonContent = ""
             isValidBson = false
-            errorMessage = "File does not appear to be a valid BSON:\n%s".format(virtualFile.path)
+            errorMessage = "File does not appear to be a valid BSON:\n%s".format(virtualFile.name)
         }
     }
 
@@ -78,7 +78,7 @@ class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
             JSON_MAPPER.readTree(json)
             isValidBson = true
         } catch (e: JsonProcessingException) {
-            LOG.debug("Invalid JSON format. Marking virtual file as invalid", e)
+            log.debug("Invalid JSON format. Marking virtual file as invalid", e)
             // Keep the invalid JSON for editing, but mark as invalid
             isValidBson = false
         }
@@ -89,7 +89,7 @@ class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
             // Only valid JSON can be converted to BSON, but since it is an expected state during editing,
             // just don't do anything and wait until the save call with a valid JSON
             if (!isValidBson) {
-                LOG.debug("Not saving invalid BSON document to preserve previous valid content")
+                log.debug("Not saving invalid BSON document to preserve previous valid content")
                 return
             }
 
@@ -109,12 +109,12 @@ class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
 
                     virtualFile.setBinaryContent(bsonContent)
                 } catch (e: JsonProcessingException) {
-                    LOG.error("Error converting JSON to BSON", e)
+                    log.error("Error converting JSON to BSON", e)
                     isValidBson = false
                 }
             }
         } catch (e: Exception) {
-            LOG.error("Error saving file", e)
+            log.error("Error saving file", e)
         }
     }
 

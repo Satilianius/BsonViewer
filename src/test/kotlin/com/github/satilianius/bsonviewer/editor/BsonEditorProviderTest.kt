@@ -4,6 +4,7 @@ import com.github.satilianius.bsonviewer.editor.BsonConvertor.Companion.jsonToBs
 import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.openapi.util.Disposer
 
 class BsonEditorProviderTest : BasePlatformTestCase() {
 
@@ -43,7 +44,7 @@ class BsonEditorProviderTest : BasePlatformTestCase() {
             assertInstanceOf(editor, BsonEditor::class.java)
             assertEquals(bsonFile, editor.file)
         } finally {
-            editor.dispose()
+            Disposer.dispose(editor)
         }
     }
 }
