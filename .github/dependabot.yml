@@ -8,6 +8,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "sunday"
+      time: "12:00"
     groups:
       gradle-all:
         patterns:
@@ -18,6 +20,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "sunday"
+      time: "12:00"
     groups:
       github-actions-all:
         patterns:
