@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Make plugin work with concatenated bsons containing multiple entries 
+## [0.1.2]
+
+### Added
+
+- Make plugin represent MongoDB dump bsons with multiple entries as JSON Lines
 
 ## [0.1.1]
 
@@ -23,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modify the JSON view of the file and save back to BSON
 - Create BSON files from scratch
 
-[Unreleased]: https://github.com/Satilianius/BsonViewer/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/Satilianius/BsonViewer/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/Satilianius/BsonViewer/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Satilianius/BsonViewer/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Satilianius/BsonViewer/commits/v0.1.0
