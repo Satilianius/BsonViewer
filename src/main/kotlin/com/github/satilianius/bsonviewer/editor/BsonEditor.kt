@@ -1,6 +1,7 @@
 package com.github.satilianius.bsonviewer.editor
 
 import com.intellij.json.JsonFileType
+import com.intellij.json.jsonLines.JsonLinesFileType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
@@ -28,7 +29,10 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
     private val jsonContent: String = bsonDocument.toJson()
 
     // Create a lightweight virtual file with a JSON file type
-    val jsonVirtualFile = LightVirtualFile("${virtualFile.name}.json", JsonFileType.INSTANCE, jsonContent)
+    val jsonVirtualFile =
+        if (bsonDocument.hasMultipleEntries())
+            LightVirtualFile("${virtualFile.name}.ndjson", JsonLinesFileType.INSTANCE, jsonContent)
+        else LightVirtualFile("${virtualFile.name}.json", JsonFileType.INSTANCE, jsonContent)
 
     // Creating an editor with the JSON virtual file should return JSON editor
     private val jsonEditor = TextEditorProvider.getInstance().createEditor(project, jsonVirtualFile) as TextEditor

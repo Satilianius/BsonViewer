@@ -10,13 +10,13 @@ BsonViewer allows you to view and edit MongoDB BSON files as JSON files directly
 
 ## Features:
 - Open and edit BSON files directly in your IDE
-- Automatic conversion between BSON and JSON formats
-- Validation to ensure data integrity
 - Save modifications back to BSON format
+- Validation to ensure data integrity
+- Supports MongoDB bson dumps showing them as JSON Lines
 
 ## Limitations:
 - Only valid JSON file can be converted to BSON, so if after editing the file contains invalid JSON, the last valid version will be saved instead
-- BSON format does not preserve formatting, so the default Jackson prettyPrinter is always used to format the file
+- BSON format does not preserve formatting, so the default Jackson pretty printer is used to format the file
 
 ## Support
 Found an issue? Have a feature request? Visit [GitHub repository](https://github.com/Satilianius/BsonViewer/issues) or [contact the developer](mailto:satilianius@gmail.com).
