@@ -91,8 +91,8 @@ intellijPlatform {
     }
 
     signing {
-        certificateChainFile = layout.projectDirectory.file("SSL/chain.crt")
-        privateKeyFile = layout.projectDirectory.file("SSL/private.pem")
+        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PRIVATE_KEY")
         password = providers.environmentVariable("SSL_PRIVATE_KEY_PASSWORD")
     }
 
