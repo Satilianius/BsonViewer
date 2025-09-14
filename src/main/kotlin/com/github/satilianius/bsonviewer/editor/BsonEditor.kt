@@ -3,11 +3,15 @@ package com.github.satilianius.bsonviewer.editor
 import com.intellij.json.JsonFileType
 import com.intellij.json.jsonLines.JsonLinesFileType
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.event.BulkAwareDocumentListener
 import com.intellij.openapi.editor.event.DocumentEvent
-import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.editor.ex.EditorEx
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileDocumentManagerListener
 import com.intellij.openapi.fileEditor.FileEditorLocation
 import com.intellij.openapi.fileEditor.FileEditorState
 import com.intellij.openapi.fileEditor.FileEditorStateLevel
@@ -20,6 +24,7 @@ import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.pom.Navigatable
 import com.intellij.testFramework.LightVirtualFile
+import com.intellij.util.application
 import java.beans.PropertyChangeListener
 import javax.swing.JComponent
 
@@ -36,6 +41,9 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
 
     // Creating an editor with the JSON virtual file should return JSON editor
     private val jsonEditor = TextEditorProvider.getInstance().createEditor(project, jsonVirtualFile) as TextEditor
+
+    private val messageBusConnection = application.messageBus.connect(this)
+    @Volatile private var jsonDocumentChanged = false
 
     init {
         log.info("Initializing BsonEditor")
@@ -61,19 +69,60 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
             }
         }
 
-        // Add a document listener to convert JSON back to BSON on document change
-        jsonEditor.editor.document.addDocumentListener(
-            object : DocumentListener {
-                override fun documentChanged(event: DocumentEvent) {
-                    if (ApplicationManager.getApplication().isDispatchThread) {
-                        val json = jsonEditor.editor.document.text
-                        bsonDocument.setContent(json)
-                        bsonDocument.save()
+        // Mark as dirty when JSON text changes
+        jsonEditor.editor.document.addDocumentListener(object : BulkAwareDocumentListener {
+            override fun documentChanged(event: DocumentEvent) {
+                jsonDocumentChanged = true
+            }
+        }, this)
+
+        messageBusConnection.subscribe(
+            FileDocumentManagerListener.TOPIC,
+            object: FileDocumentManagerListener {
+                private val logger = Logger.getInstance(BsonEditor::class.java)
+                override fun beforeDocumentSaving(document: Document) {
+                    logger.info("beforeDocumentSaving $document")
+                    super.beforeDocumentSaving(document)
+                }
+
+                override fun beforeAnyDocumentSaving(document: Document, explicit: Boolean) {
+                    logger.info("beforeAnyDocumentSaving $document")
+                    super.beforeAnyDocumentSaving(document, explicit)
+                }
+                override fun beforeAllDocumentsSaving() {
+                    logger.info("beforeAllDocumentsSaving. dirty=$jsonDocumentChanged, isModified=${isModified()}")
+                    if (!jsonDocumentChanged) {
+                        return
+                    }
+                    val doc = FileDocumentManager.getInstance().getDocument(jsonVirtualFile)
+                    val textToSave = doc?.text ?: bsonDocument.toJson()
+                    if (textToSave.isEmpty() && bsonDocument.toJson().isEmpty()) return
+
+                    logger.info("Saving JSON view for ${jsonVirtualFile.name} (dirty=$jsonDocumentChanged)")
+                    CommandProcessor.getInstance().runUndoTransparentAction {
+                        ApplicationManager.getApplication().runWriteAction {
+                            bsonDocument.setContent(textToSave)
+                            bsonDocument.save()
+                            jsonDocumentChanged = false
+                        }
                     }
                 }
-            },
-            jsonEditor
+            }
         )
+
+        // Add a document listener to convert JSON back to BSON on document change
+//        jsonEditor.editor.document.addDocumentListener(
+//            object : DocumentListener {
+//                override fun documentChanged(event: DocumentEvent) {
+//                    if (ApplicationManager.getApplication().isDispatchThread) {
+//                        val json = jsonEditor.editor.document.text
+//                        bsonDocument.setContent(json)
+//                        bsonDocument.save()
+//                    }
+//                }
+//            },
+//            jsonEditor
+//        )
     }
 
     fun isViewer(): Boolean = (jsonEditor.editor as? EditorEx)?.isViewer ?: false
