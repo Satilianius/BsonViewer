@@ -5,7 +5,6 @@ import com.intellij.json.jsonLines.JsonLinesFileType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.CommandProcessor
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.BulkAwareDocumentListener
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -57,7 +56,7 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
                 (jsonEditor.editor as EditorEx).isViewer = true
             }
 
-            // Show the error dialog only if not in test mode
+            // Show the error dialogue only if not in test mode
             if (!ApplicationManager.getApplication().isUnitTestMode) {
                 ApplicationManager.getApplication().invokeLater {
                     Messages.showErrorDialog(
@@ -79,50 +78,31 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
         messageBusConnection.subscribe(
             FileDocumentManagerListener.TOPIC,
             object: FileDocumentManagerListener {
-                private val logger = Logger.getInstance(BsonEditor::class.java)
-                override fun beforeDocumentSaving(document: Document) {
-                    logger.info("beforeDocumentSaving $document")
-                    super.beforeDocumentSaving(document)
-                }
-
-                override fun beforeAnyDocumentSaving(document: Document, explicit: Boolean) {
-                    logger.info("beforeAnyDocumentSaving $document")
-                    super.beforeAnyDocumentSaving(document, explicit)
-                }
                 override fun beforeAllDocumentsSaving() {
-                    logger.info("beforeAllDocumentsSaving. dirty=$jsonDocumentChanged, isModified=${isModified()}")
-                    if (!jsonDocumentChanged) {
-                        return
-                    }
-                    val doc = FileDocumentManager.getInstance().getDocument(jsonVirtualFile)
-                    val textToSave = doc?.text ?: bsonDocument.toJson()
-                    if (textToSave.isEmpty() && bsonDocument.toJson().isEmpty()) return
-
-                    logger.info("Saving JSON view for ${jsonVirtualFile.name} (dirty=$jsonDocumentChanged)")
-                    CommandProcessor.getInstance().runUndoTransparentAction {
-                        ApplicationManager.getApplication().runWriteAction {
-                            bsonDocument.setContent(textToSave)
-                            bsonDocument.save()
-                            jsonDocumentChanged = false
-                        }
-                    }
+                    trySave()
                 }
             }
         )
+    }
 
-        // Add a document listener to convert JSON back to BSON on document change
-//        jsonEditor.editor.document.addDocumentListener(
-//            object : DocumentListener {
-//                override fun documentChanged(event: DocumentEvent) {
-//                    if (ApplicationManager.getApplication().isDispatchThread) {
-//                        val json = jsonEditor.editor.document.text
-//                        bsonDocument.setContent(json)
-//                        bsonDocument.save()
-//                    }
-//                }
-//            },
-//            jsonEditor
-//        )
+    private fun trySave() {
+        log.info("Saving JSON view for ${jsonVirtualFile.name} (dirty=$jsonDocumentChanged)")
+
+        if (!jsonDocumentChanged) {
+            return
+        }
+
+        val doc = FileDocumentManager.getInstance().getDocument(jsonVirtualFile)
+        val textToSave = doc?.text ?: bsonDocument.toJson()
+        if (textToSave.isEmpty() && bsonDocument.toJson().isEmpty()) return
+
+        CommandProcessor.getInstance().runUndoTransparentAction {
+            ApplicationManager.getApplication().runWriteAction {
+                bsonDocument.setContent(textToSave)
+                bsonDocument.save()
+                jsonDocumentChanged = false
+            }
+        }
     }
 
     fun isViewer(): Boolean = (jsonEditor.editor as? EditorEx)?.isViewer ?: false
@@ -168,6 +148,7 @@ class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserD
     }
 
     override fun dispose() {
+        trySave()
         // The Disposer should handle disposal of the listener automatically
         // https://plugins.jetbrains.com/docs/intellij/disposers.html#registering-listeners-with-parent-disposable
         Disposer.dispose(jsonEditor)
