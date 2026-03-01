@@ -1,16 +1,16 @@
 [versions]
 # libraries
-bson4Jackson = "2.18.0"
-jackson = "2.20.1"
+bson4Jackson = "3.1.0"
+jackson = "2.21.1"
 junit = "4.13.2"
-mongodb-bson = "5.6.2"
+mongodb-bson = "5.6.4"
 opentest4j = "1.3.0"
 
 # plugins
 changelog = "2.5.0"
-intelliJPlatform = "2.10.5"
-kotlin = "2.3.0"
-kover = "0.9.4"
+intelliJPlatform = "2.11.0"
+kotlin = "2.3.10"
+kover = "0.9.7"
 qodana = "2025.3.1"
 
 [libraries]
