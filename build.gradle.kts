@@ -33,7 +33,8 @@ repositories {
 dependencies {
     implementation(libs.mongodb.bson)
     implementation(libs.bson4jackson)
-    implementation(libs.jackson.blackbird)
+    implementation(libs.jackson.databind)
+    implementation(libs.jackson.core)
 
     testImplementation(libs.junit)
     testImplementation(libs.opentest4j)
@@ -131,6 +132,12 @@ kover {
 tasks {
     wrapper {
         gradleVersion = providers.gradleProperty("gradleVersion").get()
+    }
+
+    buildSearchableOptions {
+        // Not needed, since there are no searchable UI elements
+        // See: https://github.com/JetBrains/intellij-platform-plugin-template/issues/538#issuecomment-4142022560
+        enabled = false
     }
 
     publishPlugin {

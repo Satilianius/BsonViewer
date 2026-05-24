@@ -1,16 +1,16 @@
 package com.github.satilianius.bsonviewer.editor
 
-import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.core.util.DefaultIndenter
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.vfs.VirtualFile
 import de.undercouch.bson4jackson.BsonFactory
-import org.bson.BsonDocument
+import tools.jackson.core.JacksonException
+import tools.jackson.core.util.DefaultIndenter
+import tools.jackson.core.util.DefaultPrettyPrinter
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 
@@ -21,8 +21,9 @@ private val log = logger<BsonDocument>()
 
 class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
     companion object {
-        private val JSON_MAPPER = ObjectMapper()
+        private val JSON_MAPPER = JsonMapper.builder()
             .enable(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY) // Used for validation
+            .build()
         private val BSON_MAPPER = ObjectMapper(BsonFactory())
     }
 
@@ -59,7 +60,7 @@ class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
 
             if (jsonNodes.size == 1) {
                 // Single document: pretty-print JSON
-                jsonContent = JSON_MAPPER.writer(
+                jsonContent = JSON_MAPPER.writer().with(
                     DefaultPrettyPrinter().withObjectIndenter(
                         DefaultIndenter().withLinefeed(IntelliJDefaultLineSeparator)
                     )
@@ -73,6 +74,12 @@ class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
             log.info("Successfully parsed BSON file content of ${virtualFile.name} (documents=${jsonNodes.size})")
             isValidBson = true
             errorMessage = null
+        } catch (e: JacksonException) {
+            log.info("Failed to read BSON file", e)
+            jsonContent = ""
+            isValidBson = false
+            errorMessage = "File does not appear to be a valid BSON:\n%s".format(virtualFile.name)
+            hasMultipleEntries = false
         } catch (e: IOException) {
             log.info("Failed to read BSON file", e)
             jsonContent = ""
@@ -120,7 +127,7 @@ class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
             JSON_MAPPER.readTree(trimmed)
             isValidBson = true
             hasMultipleEntries = false
-        } catch (e: JsonProcessingException) {
+        } catch (e: JacksonException) {
             log.debug("Invalid JSON format. Marking virtual file as invalid", e)
             isValidBson = false
             // Do not override hasMultipleEntries here; it will be recalculated on the next valid state
@@ -164,7 +171,7 @@ class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
                         val bsonContent = BSON_MAPPER.writeValueAsBytes(jsonNode)
                         virtualFile.setBinaryContent(bsonContent)
                     }
-                } catch (e: JsonProcessingException) {
+                } catch (e: JacksonException) {
                     log.error("Error converting JSON to BSON", e)
                     isValidBson = false
                 }
@@ -180,7 +187,7 @@ class BsonDocument(private val virtualFile: VirtualFile) : Disposable {
             try {
                 JSON_MAPPER.readTree(line)
                 true
-            } catch (_: JsonProcessingException) {
+            } catch (_: JacksonException) {
                 false
             }
         }

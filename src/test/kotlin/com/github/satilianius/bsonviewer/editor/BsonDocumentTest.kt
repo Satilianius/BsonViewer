@@ -54,7 +54,7 @@ class BsonDocumentTest : BasePlatformTestCase() {
         }
 
         val bsonDocument = BsonDocument(bsonFile)
-        //language=JSONLines
+        // language=JSONLines
         bsonDocument.setContent("""{"line": "1", "value": 123}
 {"line": "2", "value": 456}""")
 

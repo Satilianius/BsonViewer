@@ -3,7 +3,7 @@ package com.github.satilianius.bsonviewer.editor
 import com.intellij.json.JsonFileType
 import com.intellij.json.jsonLines.JsonLinesFileType
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
@@ -24,7 +24,7 @@ import java.beans.PropertyChangeListener
 import javax.swing.JComponent
 
 class BsonEditor(project: Project, private val virtualFile: VirtualFile) : UserDataHolderBase(), TextEditor {
-    private val log = Logger.getInstance(BsonEditor::class.java)
+    private val log = logger<BsonEditor>()
     private val bsonDocument = BsonDocument(virtualFile)
     private val jsonContent: String = bsonDocument.toJson()
 
